@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel RRHH - Solicitudes</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body onload="cargarTrabajadores(); filtrarSolicitudes()">
+  <!-- Título principal -->
+  <h1>Panel de RRHH - Gestión de Solicitudes</h1>
+
+  <!-- Botones principales para navegar a otras funciones o salir -->
+  <div>
+    <button onclick="window.location.href='subir-certificado.html'">Subir Certificados</button>
+    <button onclick="window.location.href='subir-liquidacion.html'">Subir Liquidación</button>
+    <button onclick="window.location.href='registrar-trabajador.html'">Registrar Trabajador</button>
+    <button onclick="window.location.href='ver-trabajadores.html'">Ver Trabajadores</button>
+    <button onclick="cerrarSesion()">Cerrar Sesión</button>
+  </div>
+
+  <!-- Filtros para buscar solicitudes por trabajador o estado -->
+  <div>
+    <label for="filtroTrabajador">Filtrar por trabajador:</label>
+    <select id="filtroTrabajador" onchange="filtrarSolicitudes()">
+      <option value="">-- Ver todas las solicitudes --</option>
+      <!-- Opciones de trabajadores se agregan dinámicamente -->
+    </select>
+
+    <label for="filtroEstado">Filtrar por estado:</label>
+    <select id="filtroEstado" onchange="filtrarSolicitudes()">
+      <option value="">-- Todos los estados --</option>
+      <option value="pendiente">Pendiente</option>
+      <option value="aprobada">Aprobada</option>
+      <option value="rechazada">Rechazada</option>
+    </select>
+  </div>
+
+  <!-- Muestra el saldo de vacaciones y días administrativos disponibles del trabajador seleccionado -->
+  <div id="infoSaldo" style="margin-top: 20px; display: none;">
+    <h3>Saldo actual del trabajador seleccionado:</h3>
+    <ul>
+      <li><strong>Vacaciones disponibles:</strong> <span id="saldoVacaciones"></span></li>
+      <li><strong>Días administrativos disponibles:</strong> <span id="saldoAdmin"></span></li>
+    </ul>
+  </div>
+
+  <!-- Tabla donde se muestran las solicitudes filtradas -->
+  <table id="tablaSolicitudes">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tipo</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Estado</th>
+        <th>Trabajador</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // Función para cargar los trabajadores en el filtro (select)
+    async function cargarTrabajadores() {
+      const res = await fetch('https://sackserver.ddns.net/api/trabajadores');
+      const trabajadores = await res.json();
+      const select = document.getElementById('filtroTrabajador');
+
+      // Por cada trabajador, agrega una opción al select
+      trabajadores.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = `${t.nombre} ${t.apellido}`;
+        select.appendChild(option);
+      });
+    }
+
+    // Función para filtrar y mostrar las solicitudes según filtros seleccionados
+    async function filtrarSolicitudes() {
+      const filtroTrabajador = document.getElementById('filtroTrabajador').value;
+      const filtroEstado = document.getElementById('filtroEstado').value;
+
+      // Obtiene todas las solicitudes desde la API
+      const res = await fetch('https://sackserver.ddns.net/api/solicitudes');
+      const solicitudes = await res.json();
+      const tbody = document.querySelector('#tablaSolicitudes tbody');
+      tbody.innerHTML = ''; // Limpia la tabla
+
+      // Filtra las solicitudes por trabajador y estado si corresponde
+      solicitudes
+        .filter(s =>
+          (!filtroTrabajador || s.trabajador_id == filtroTrabajador) &&
+          (!filtroEstado || s.estado === filtroEstado)
+        )
+        .forEach(s => {
+          let acciones = '—'; // Por defecto, no hay acciones
+          if (s.estado === 'pendiente') {
+            // Si la solicitud está pendiente, permite aprobar o rechazar
+            acciones = `
+              <button onclick="cambiarEstado(${s.id}, 'aprobada')">Aprobar</button>
+              <button onclick="cambiarEstado(${s.id}, 'rechazada')">Rechazar</button>
+            `;
+          }
+
+          // Agrega una fila a la tabla con los datos de la solicitud
+          const fila = `
+            <tr>
+              <td>${s.id}</td>
+              <td>${s.tipo}</td>
+              <td>${new Date(s.fecha_inicio).toLocaleDateString('es-CL')}</td>
+              <td>${new Date(s.fecha_fin).toLocaleDateString('es-CL')}</td>
+              <td>${s.estado}</td>
+              <td>${s.nombre} ${s.apellido}</td>
+              <td>${acciones}</td>
+            </tr>`;
+          tbody.innerHTML += fila;
+        });
+
+      // Si hay un trabajador seleccionado, muestra su saldo
+      if (filtroTrabajador) {
+        try {
+          // Solicita los saldos del trabajador a la API
+          const resSaldo = await fetch(`https://sackserver.ddns.net/api/saldos/por-trabajador/${filtroTrabajador}`);
+          const saldo = await resSaldo.json();
+
+          // Calcula los días restantes disponibles y los muestra
+          const vacacionesRestantes = saldo.dias_vacaciones_disponibles - saldo.dias_vacaciones_usados;
+          const adminRestantes = saldo.dias_admin_disponibles - saldo.dias_admin_usados;
+
+          document.getElementById('saldoVacaciones').textContent = vacacionesRestantes + ' días';
+          document.getElementById('saldoAdmin').textContent = adminRestantes + ' días';
+          document.getElementById('infoSaldo').style.display = 'block'; // Muestra el bloque de saldo
+        } catch (error) {
+          // Si ocurre un error, muestra el mensaje de error
+          console.error('Error al cargar saldo:', error);
+          document.getElementById('infoSaldo').innerHTML = '<p style="color:red;">No se pudo cargar el saldo del trabajador.</p>';
+        }
+      } else {
+        // Si no hay trabajador seleccionado, oculta el bloque de saldo
+        document.getElementById('infoSaldo').style.display = 'none';
+      }
+    }
+
+    // Función para cambiar el estado de una solicitud (aprobar o rechazar)
+    async function cambiarEstado(id, estado) {
+      try {
+        const res = await fetch(`https://sackserver.ddns.net/api/solicitudes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado })
+        });
+
+        const data = await res.json();
+        alert(data.mensaje || data.error); // Muestra el mensaje de la API
+        filtrarSolicitudes(); // Recarga la tabla de solicitudes
+      } catch (err) {
+        // Si ocurre un error al actualizar, lo muestra
+        console.error('Error al cambiar estado:', err);
+        alert('Error al actualizar estado de la solicitud');
+      }
+    }
+
+    // Función para cerrar sesión, limpia localStorage y redirige a login
+    function cerrarSesion() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="stylesheet" href="css/estilos.css"> <!-- Vincula la hoja de estilos -->
+  <meta charset="UTF-8">
+  <title>Panel del Trabajador</title>
+</head>
+
+<body onload="iniciarPanel()"> <!-- Al cargar la página ejecuta iniciarPanel() -->
+
+  <h3 id="bienvenida"></h3> <!-- Aquí se mostrará el saludo con nombre del trabajador -->
+  <h1>Panel del Trabajador</h1>
+  <section id="saldo">
+    <h2>Mi saldo de días</h2>
+    <ul>
+      <li><strong>Vacaciones disponibles:</strong> <span id="vacaciones-restantes">...</span></li>
+      <li><strong>Días administrativos disponibles:</strong> <span id="admin-restantes">...</span></li>
+    </ul>
+  </section>
+  <button onclick="cerrarSesion()">Cerrar Sesión</button> <!-- Botón para cerrar sesión -->
+
+  <div style="margin-top: 20px;">
+    <button onclick="window.location.href='formulario-solicitud.html'">Solicitar Permiso</button> <!-- Botón para ir al formulario de permisos -->
+  </div>
+
+  <h2>Mis Solicitudes</h2>
+  <table id="tablaSolicitudes">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tipo</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Filtros para certificados -->
+  <div style="margin-top: 10px;">
+    <label for="filtroTipoCert">Filtrar por tipo:</label>
+    <select id="filtroTipoCert" onchange="filtrarCertificados()">
+      <option value="">-- Todos los tipos --</option>
+      <option value="antiguedad">Antiguedad</option>
+      <!--<option value="liquidación">Liquidación</option> -->
+      <option value="anexo">Anexo de Contrato</option>
+      <option value="contrato">Contrato</option>
+    </select>
+
+    <label for="filtroFechaCert" style="margin-left: 20px;">Filtrar por fecha:</label>
+    <input type="date" id="filtroFechaCert" onchange="filtrarCertificados()">
+  </div>
+
+  <h2>Mis Certificados</h2>
+  <table id="tablaCertificados">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tipo</th>
+        <th>Archivo</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Filtros para liquidaciones -->
+  <div style="margin-top: 10px;">
+    <label for="filtroMesLiq">Filtrar por mes:</label>
+    <select id="filtroMesLiq" onchange="filtrarLiquidaciones()">
+      <option value="">-- Todos los meses --</option>
+      <option value="enero">Enero</option>
+      <option value="febrero">Febrero</option>
+      <option value="marzo">Marzo</option>
+      <option value="abril">Abril</option>
+      <option value="mayo">Mayo</option>
+      <option value="junio">Junio</option>
+      <option value="julio">Julio</option>
+      <option value="agosto">Agosto</option>
+      <option value="septiembre">Septiembre</option>
+      <option value="octubre">Octubre</option>
+      <option value="noviembre">Noviembre</option>
+      <option value="diciembre">Diciembre</option>
+    </select>
+
+    <label for="filtroAnioLiq" style="margin-left: 20px;">Filtrar por año:</label>
+    <input type="number" id="filtroAnioLiq" min="2000" max="2100" onchange="filtrarLiquidaciones()">
+  </div>
+
+  <h2>Mis Liquidaciones</h2>
+  <table id="tablaLiquidaciones">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Mes</th>
+        <th>Año</th>
+        <th>Archivo</th>
+        <th>Fecha Emisión</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+     let certificadosFiltrados = [];
+     let liquidacionesFiltradas = [];
+
+  // Función principal que se ejecuta al cargar el panel del trabajador
+  async function iniciarPanel() {
+    const correo = localStorage.getItem('correoUsuario');
+    if (!correo) {
+      alert("No hay sesión iniciada. Redirigiendo al login...");
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // Obtiene los datos del trabajador a partir del correo
+    const res = await fetch(`https://sackserver.ddns.net/api/trabajadores/por-correo/${correo}`);
+    const data = await res.json();
+    if (!data.id) {
+      alert('No se encontró un trabajador asociado a este usuario.');
+      return;
+    }
+
+    document.getElementById('bienvenida').textContent = `Bienvenido, ${data.nombre} ${data.apellido}`;
+    const id = data.id;
+    localStorage.setItem('idUsuario', id); // Guarda el id del trabajador en localStorage
+
+    // Cargar saldo de días
+    try {
+      const resSaldo = await fetch(`https://sackserver.ddns.net/api/saldos/por-trabajador/${id}`);
+      const saldo = await resSaldo.json();
+
+      const vacacionesRestantes = saldo.dias_vacaciones_disponibles - saldo.dias_vacaciones_usados;
+      const adminRestantes = saldo.dias_admin_disponibles - saldo.dias_admin_usados;
+
+      document.getElementById('vacaciones-restantes').textContent = vacacionesRestantes + ' días';
+      document.getElementById('admin-restantes').textContent = adminRestantes + ' días';
+
+    } catch (err) {
+      console.error('Error al cargar saldo:', err);
+      document.getElementById('saldo').innerHTML += '<p style="color:red;">No se pudo cargar el saldo.</p>';
+    }
+
+    // Cargar solicitudes del trabajador
+    const resSolicitudes = await fetch(`https://sackserver.ddns.net/api/solicitudes/trabajador/${id}`);
+    const solicitudes = await resSolicitudes.json();
+    const tbodySol = document.querySelector('#tablaSolicitudes tbody');
+    tbodySol.innerHTML = '';
+    solicitudes.forEach(s => {
+      tbodySol.innerHTML += `
+        <tr>
+          <td>${s.id}</td>
+          <td>${s.tipo}</td>
+          <td>${new Date(s.fecha_inicio).toLocaleDateString('es-CL')}</td>
+          <td>${new Date(s.fecha_fin).toLocaleDateString('es-CL')}</td>
+          <td>${s.estado}</td>
+        </tr>`;
+    });
+
+    // Cargar certificados del trabajador
+    const resCertificados = await fetch(`https://sackserver.ddns.net/api/certificados/${id}`);
+    certificadosFiltrados = await resCertificados.json();
+    filtrarCertificados();
+
+    // Cargar liquidaciones del trabajador
+    const resLiquidaciones = await fetch(`https://sackserver.ddns.net/api/liquidaciones/${id}`);
+    liquidacionesFiltradas = await resLiquidaciones.json();
+    filtrarLiquidaciones();
+  }
+
+    // Filtra y muestra los certificados según el tipo o fecha seleccionados
+    function filtrarCertificados() {
+      const tipo = document.getElementById('filtroTipoCert').value.toLowerCase();
+      const fecha = document.getElementById('filtroFechaCert').value;
+      const tbody = document.querySelector('#tablaCertificados tbody');
+      tbody.innerHTML = '';
+
+      certificadosFiltrados.forEach(c => {
+        const tipoMatch = !tipo || c.tipo.toLowerCase() === tipo;
+        const fechaMatch = !fecha || c.fecha_emision.substring(0, 10) === fecha;
+        if (tipoMatch && fechaMatch) {
+          tbody.innerHTML += `
+            <tr>
+              <td>${c.id}</td>
+              <td>${c.tipo}</td>
+              <td><a href="https://sackserver.ddns.net${c.archivo_url}" target="_blank">Descargar</a></td>
+              <td>${new Date(c.fecha_emision).toLocaleDateString('es-CL')}</td>
+            </tr>`;
+        }
+      });
+    }
+
+    // Filtra y muestra las liquidaciones según el mes y año seleccionados
+    function filtrarLiquidaciones() {
+      const mes = document.getElementById('filtroMesLiq').value.toLowerCase();
+      const anio = document.getElementById('filtroAnioLiq').value;
+      const tbody = document.querySelector('#tablaLiquidaciones tbody');
+      tbody.innerHTML = '';
+
+      liquidacionesFiltradas.forEach(l => {
+        const mesMatch = !mes || l.mes.toLowerCase() === mes;
+        const anioMatch = !anio || l.anio == anio;
+        if (mesMatch && anioMatch) {
+          tbody.innerHTML += `
+            <tr>
+              <td>${l.id}</td>
+              <td>${l.mes}</td>
+              <td>${l.anio}</td>
+              <td><a href="https://sackserver.ddns.net${l.archivo_url}" target="_blank">Descargar</a></td>
+              <td>${new Date(l.fecha_emision).toLocaleDateString('es-CL')}</td>
+            </tr>`;
+        }
+      });
+    }
+
+    // Función para cerrar sesión, limpia localStorage y redirige a login
+    function cerrarSesion() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

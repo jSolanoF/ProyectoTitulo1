@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registrar Trabajador</title>
+  <link rel="stylesheet" href="css/estilos.css" /> <!-- Vincula los estilos CSS -->
+</head>
+<body class="centro"> <!-- Clase de centrado desde CSS -->
+  <div class="formulario-contenedor"> <!-- Contenedor principal del formulario -->
+    <h1>Registrar Nuevo Trabajador</h1>
+    <!-- Formulario para registrar un trabajador -->
+    <form id="formTrabajador">
+      <label for="nombre">Nombre:</label>
+      <input type="text" id="nombre" />
+      <span class="error" id="error-nombre"></span> <!-- Muestra error si falta el nombre -->
+
+      <label for="apellido">Apellido:</label>
+      <input type="text" id="apellido" />
+      <span class="error" id="error-apellido"></span> <!-- Muestra error si falta el apellido -->
+
+      <label for="rut">RUT:</label>
+      <input type="text" id="rut" />
+      <span class="error" id="error-rut"></span> <!-- Muestra error si falta el RUT -->
+
+      <label for="correo">Correo del trabajador:</label>
+      <input type="email" id="correo" />
+      <span class="error" id="error-correo"></span> <!-- Muestra error si falta el correo -->
+
+      <label for="contrasena">Contraseña:</label>
+      <input type="password" id="contrasena" />
+      <span class="error" id="error-contrasena"></span> <!-- Muestra error si falta la contraseña -->
+
+      <label for="fecha">Fecha de ingreso:</label>
+      <input type="date" id="fecha" />
+      <span class="error" id="error-fecha"></span> <!-- Muestra error si falta la fecha -->
+
+      <div class="botones-formulario">
+        <button type="submit">Registrar</button> <!-- Botón para registrar -->
+        <button type="button" onclick="window.location.href='panel-rrhh.html'">Volver</button> <!-- Botón para volver al panel -->
+      </div>
+    </form>
+    <p id="mensaje" class="error"></p> <!-- Muestra mensajes de error generales -->
+  </div>
+
+  <script>
+    // Listener para el evento de envío del formulario
+    document.getElementById('formTrabajador').addEventListener('submit', async function(e) {
+      e.preventDefault(); // Evita que la página se recargue
+
+      // Captura de campos del formulario
+      const nombre = document.getElementById('nombre').value.trim();
+      const apellido = document.getElementById('apellido').value.trim();
+      const rut = document.getElementById('rut').value.trim();
+      const correo = document.getElementById('correo').value.trim();
+      const contraseña = document.getElementById('contrasena').value.trim();
+      const fecha_ingreso = document.getElementById('fecha').value;
+
+      // Limpia errores anteriores
+      document.querySelectorAll('.error').forEach(el => el.textContent = '');
+
+      let valido = true; // Variable de control para validación
+
+      // Validaciones de campos vacíos, muestra mensajes si faltan datos
+      if (!nombre) {
+        document.getElementById('error-nombre').textContent = ' Ingresa un nombre';
+        valido = false;
+      }
+      if (!apellido) {
+        document.getElementById('error-apellido').textContent = ' Ingresa un apellido';
+        valido = false;
+      }
+      if (!rut) {
+        document.getElementById('error-rut').textContent = ' Ingresa el RUT';
+        valido = false;
+      }
+      if (!correo) {
+        document.getElementById('error-correo').textContent = ' Ingresa un correo válido';
+        valido = false;
+      }
+      if (!contraseña) {
+        document.getElementById('error-contrasena').textContent = 'Ingresa una contraseña';
+        valido = false;
+      }
+      if (!fecha_ingreso) {
+        document.getElementById('error-fecha').textContent = ' Selecciona una fecha';
+        valido = false;
+      }
+
+      if (!valido) return; // Si hay errores, no envía el formulario
+
+      try {
+        // Envía los datos al backend usando fetch (POST)
+        const res = await fetch('https://sackserver.ddns.net/api/trabajadores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, apellido, rut, correo, contraseña, fecha_ingreso })
+        });
+
+        const data = await res.json();
+
+        // Si el registro fue exitoso, redirige al panel RRHH
+        if (res.ok) {
+          alert('Trabajador registrado con éxito');
+          window.location.href = 'panel-rrhh.html';
+        } else {
+          // Si hay error, muestra mensaje de error
+          document.getElementById('mensaje').textContent = data.error || 'Error en el registro.';
+        }
+      } catch (err) {
+        // Si ocurre un error de red, muestra mensaje
+        console.error(err);
+        document.getElementById('mensaje').textContent = ' Error al conectar con el servidor.';
+      }
+    });
+  </script>
+</body>
+</html>

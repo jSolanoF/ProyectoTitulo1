@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulario de Certificado</title>
+  <link rel="stylesheet" href="css/estilos.css"> <!-- Vincula el archivo de estilos CSS -->
+</head>
+<body class="centro"> <!-- Clase para centrar el contenido -->
+  <div class="formulario-contenedor">
+    <h1>Formulario de Certificado</h1>
+
+    <!-- Formulario para subir certificados, con soporte para archivos -->
+    <form id="formCertificado" enctype="multipart/form-data">
+      <label for="tipo">Tipo:</label>
+      <select id="tipo" name="tipo" required>
+        <option value="antiguedad">Antiguedad</option>
+        <option value="contrato">Contrato</option>
+        <option value="anexo contrato">Anexo de Contrato</option>
+      </select>
+
+      <label for="archivo">Archivo (PDF):</label>
+      <input type="file" id="archivo" name="archivo" accept="application/pdf" required>
+
+      <label for="fecha">Fecha de Emisión:</label>
+      <input type="date" id="fecha" name="fecha_emision" readonly style="pointer-events: none; background-color: #eee;"> <!-- Solo lectura -->
+
+      <label for="trabajadorSelect">Trabajador:</label>
+      <select id="trabajadorSelect" name="trabajador_id" required></select> <!-- Se carga dinámicamente -->
+
+      <div class="botones-formulario">
+        <button type="submit">Subir Certificado</button>
+        <button type="button" onclick="window.location.href='panel-rrhh.html'">Volver</button>
+      </div>
+    </form>
+
+    <p id="mensaje" class="error"></p> <!-- Mensaje de error (si ocurre) -->
+  </div>
+
+  <script>
+    // Cargar la fecha actual en el campo de fecha de emisión
+    document.getElementById('fecha').valueAsDate = new Date();
+
+    // Función para cargar la lista de trabajadores en el select
+    async function cargarTrabajadores() {
+      const res = await fetch('https://sackserver.ddns.net/api/trabajadores');
+      const trabajadores = await res.json();
+      const select = document.getElementById('trabajadorSelect');
+
+      trabajadores.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = `${t.nombre} ${t.apellido}`;
+        select.appendChild(option); // Agrega cada trabajador como opción
+      });
+    }
+
+    cargarTrabajadores(); // Ejecuta la carga de trabajadores al abrir la página
+
+    // Escucha el envío del formulario
+    document.getElementById('formCertificado').addEventListener('submit', async function(e) {
+      e.preventDefault(); // Previene recarga de página
+
+      const formData = new FormData(this); // Obtiene todos los campos del formulario, incluido el archivo
+
+      try {
+        // Envía la solicitud POST al backend (con archivo incluido)
+        const res = await fetch('https://sackserver.ddns.net/api/certificados', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert('Certificado subido con éxito'); // Mensaje de éxito
+          window.location.href = 'panel-rrhh.html'; // Redirige al panel principal de RRHH
+        } else {
+          alert(' Error: ' + (data.error || 'No se pudo subir')); // Muestra error si la subida falla
+        }
+      } catch (err) {
+        console.error(err);
+        alert(' Error de conexión'); // Error de conexión o servidor
+      }
+    });
+  </script>
+</body>
+</html>

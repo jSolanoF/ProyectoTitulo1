@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lista de Trabajadores</title>
+  <link rel="stylesheet" href="css/estilos.css"> <!-- Vincula la hoja de estilos CSS -->
+</head>
+<body>
+  <h1>Trabajadores Registrados</h1>
+  <button onclick="window.location.href='panel-rrhh.html'">Volver al Panel</button> <!-- Botón para volver al panel RRHH -->
+
+  <table id="tablaTrabajadores">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>RUT</th>
+        <th>Correo</th>
+        <th>Vacaciones</th>
+        <th>Días Admin</th>
+        <th>Fecha Ingreso</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody></tbody> <!-- Aquí se llenarán los trabajadores -->
+  </table>
+
+  <script>
+    // Función para cargar y mostrar todos los trabajadores y su saldo
+    async function cargarTrabajadores() {
+      try {
+        const res = await fetch('https://sackserver.ddns.net/api/trabajadores');
+        const trabajadores = await res.json();
+        const tbody = document.querySelector('#tablaTrabajadores tbody');
+        tbody.innerHTML = '';
+
+        // Recorre todos los trabajadores recibidos de la API
+        for (const t of trabajadores) {
+          let vacaciones = '-';
+          let admin = '-';
+
+          // Intenta obtener el saldo de vacaciones y días admin del trabajador
+          try {
+            const resSaldo = await fetch(`https://sackserver.ddns.net/api/saldos/por-trabajador/${t.id}`);
+            const saldo = await resSaldo.json();
+
+            vacaciones = (saldo.dias_vacaciones_disponibles - saldo.dias_vacaciones_usados) + ' días';
+            admin = (saldo.dias_admin_disponibles - saldo.dias_admin_usados) + ' días';
+          } catch (e) {
+            // Si no hay saldo para este trabajador, lo advierte en consola
+            console.warn(`No se pudo obtener saldo para trabajador ID ${t.id}`);
+          }
+
+          // Agrega una fila con los datos del trabajador y sus saldos a la tabla
+          tbody.innerHTML += `
+            <tr>
+              <td>${t.id}</td>
+              <td>${t.nombre}</td>
+              <td>${t.apellido}</td>
+              <td>${t.rut}</td>
+              <td>${t.correo}</td>
+              <td>${vacaciones}</td>
+              <td>${admin}</td>
+              <td>${new Date(t.fecha_ingreso).toLocaleDateString('es-CL')}</td>
+              <td>
+                <button onclick="editar(${t.id})">Editar</button>
+                <button onclick="eliminar(${t.id})">Eliminar</button>
+              </td>
+            </tr>`;
+        }
+      } catch (err) {
+        // Si ocurre un error cargando los trabajadores
+        alert("Error al cargar trabajadores. Verifica el servidor.");
+        console.error('Error al cargar trabajadores', err);
+      }
+    }
+
+    // Función para eliminar un trabajador seleccionado
+    async function eliminar(id) {
+      if (!confirm('¿Estás seguro de eliminar este trabajador?')) return;
+
+      try {
+        const res = await fetch(`https://sackserver.ddns.net/api/trabajadores/${id}`, {
+          method: 'DELETE'
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(data.mensaje); // Muestra mensaje de éxito
+          cargarTrabajadores(); // Refresca la tabla
+        } else {
+          alert(`Error: ${data.error || 'No se pudo eliminar el trabajador'}`);
+        }
+      } catch (err) {
+        console.error('Error al eliminar:', err);
+        alert('Error de conexión con el servidor');
+      }
+    }
+
+    // Función para editar un trabajador seleccionado
+    function editar(id) {
+      localStorage.setItem('trabajadorEditarId', id); // Guarda el ID en localStorage
+      window.location.href = 'editar-trabajador.html'; // Redirige a la vista de edición
+    }
+
+    cargarTrabajadores(); // Ejecuta la carga de trabajadores al abrir la página
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Subir Liquidación</title>
+  <link rel="stylesheet" href="css/estilos.css"> <!-- Enlaza la hoja de estilos CSS -->
+</head>
+<body class="centro"> <!-- Clase para centrar el contenido desde CSS -->
+  <div class="formulario-contenedor">
+    <h1>Subir Liquidación</h1>
+
+    <!-- Formulario para subir una liquidación de sueldo -->
+    <form id="formLiquidacion" enctype="multipart/form-data">
+      <label for="trabajadorSelect">Trabajador:</label>
+      <select id="trabajadorSelect" name="trabajador_id" required></select> <!-- Select para elegir el trabajador -->
+
+      <label for="mes">Mes:</label>
+      <input type="text" id="mes" name="mes" placeholder="Ej: Marzo" required> <!-- Mes de la liquidación -->
+
+      <label for="anio">Año:</label>
+      <input type="number" id="anio" name="anio" placeholder="Ej: 2025" required> <!-- Año de la liquidación -->
+
+      <label for="archivo">Archivo PDF:</label>
+      <input type="file" id="archivo" name="archivo" accept="application/pdf" required> <!-- Subida del PDF -->
+
+      <label for="fecha_emision">Fecha de Emisión:</label>
+      <input type="date" id="fecha_emision" name="fecha_emision" readonly> <!-- Fecha actual, solo lectura -->
+
+      <div class="botones-formulario">
+        <button type="submit">Subir Liquidación</button> <!-- Botón para enviar el formulario -->
+        <button type="button" onclick="window.location.href='panel-rrhh.html'">Volver</button> <!-- Botón para volver al panel -->
+      </div>
+    </form>
+
+    <p id="mensaje" class="error"></p> <!-- Muestra mensajes de error si ocurren -->
+  </div>
+
+  <script>
+    // Establece la fecha actual en el campo de fecha_emision
+    document.getElementById('fecha_emision').valueAsDate = new Date();
+
+    // Carga la lista de trabajadores en el select al cargar la página
+    async function cargarTrabajadores() {
+      const res = await fetch('https://sackserver.ddns.net/api/trabajadores');
+      const trabajadores = await res.json();
+      const select = document.getElementById('trabajadorSelect');
+
+      trabajadores.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = `${t.nombre} ${t.apellido}`;
+        select.appendChild(option); // Agrega cada trabajador como opción
+      });
+    }
+
+    cargarTrabajadores(); // Ejecuta la función al iniciar la página
+
+    // Maneja el envío del formulario de liquidación
+    document.getElementById('formLiquidacion').addEventListener('submit', async e => {
+      e.preventDefault(); // Evita recarga de la página
+
+      const formData = new FormData(document.getElementById('formLiquidacion')); // Toma todos los datos y archivos del form
+
+      const res = await fetch('https://sackserver.ddns.net/api/liquidaciones', {
+        method: 'POST',
+        body: formData // Envía los datos al backend (incluyendo archivo)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(' Liquidación subida correctamente'); // Muestra éxito
+        window.location.href = 'panel-rrhh.html'; // Redirige al panel RRHH
+      } else {
+        alert(' Error: ' + (data.error || 'No se pudo registrar la liquidación')); // Muestra mensaje de error
+      }
+    });
+  </script>
+</body>
+</html>

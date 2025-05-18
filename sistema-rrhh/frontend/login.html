@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Iniciar Sesión</title>
+  <link rel="stylesheet" href="css/estilos.css" /> <!-- Vincula el archivo de estilos CSS -->
+</head>
+<body class="centro"> <!-- Clase para centrar el contenido (definida en el CSS) -->
+  <div class="login-contenedor">
+    <h1>Iniciar Sesión</h1>
+
+    <!-- Formulario de inicio de sesión -->
+    <form id="formLogin">
+      <label for="correo">Correo:</label>
+      <input type="email" id="correo" required> <!-- Campo de correo electrónico -->
+
+      <label for="contrasena">Contraseña:</label>
+      <input type="password" id="contrasena" required> <!-- Campo de contraseña -->
+
+      <button type="submit">Ingresar</button> <!-- Botón para enviar el formulario -->
+    </form>
+
+    <p id="mensaje" class="error"></p> <!-- Aquí se mostrarán mensajes de error -->
+  </div>
+
+  <script>
+    // Agrega un listener al formulario para interceptar el evento "submit"
+    document.getElementById('formLogin').addEventListener('submit', async function(e) {
+      e.preventDefault(); // Evita que el formulario recargue la página por defecto
+
+      // Obtiene los valores ingresados por el usuario
+      const correo = document.getElementById('correo').value;
+      const contraseña = document.getElementById('contrasena').value;
+
+      try {
+        // Realiza una petición POST a la API de login con los datos ingresados
+        const res = await fetch('https://sackserver.ddns.net/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo, contraseña })
+        });
+
+        const data = await res.json(); // Parsea la respuesta del servidor
+
+        if (res.ok) {
+          // Si el login es exitoso, guarda los datos de sesión en localStorage
+          localStorage.setItem('correoUsuario', correo);
+          localStorage.setItem('rolUsuario', data.rol);
+          localStorage.setItem('idUsuario', data.id);
+
+          // Redirige según el rol del usuario autenticado
+          if (data.rol === 'trabajador') {
+            window.location.href = 'panel-trabajador.html';
+          } else if (data.rol === 'rrhh') {
+            window.location.href = 'panel-rrhh.html';
+          } else {
+            document.getElementById('mensaje').textContent = 'Rol no reconocido.';
+          }
+        } else {
+          // Si hay error de autenticación, muestra el mensaje correspondiente
+          document.getElementById('mensaje').textContent = data.error || 'Credenciales incorrectas';
+        }
+
+      } catch (err) {
+        // Si ocurre un error de conexión con el servidor
+        console.error(err);
+        document.getElementById('mensaje').textContent = ' Error de conexión con el servidor';
+      }
+    });
+  </script>
+</body>
+</html>

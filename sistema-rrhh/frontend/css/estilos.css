@@ -1,0 +1,260 @@
+/* ==== PANEL TRABAJADOR ==== */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f9fc;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  h1, h2, h3 {
+    color: #2c3e50;
+  }
+  
+  button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 5px;
+  }
+  
+  button:hover {
+    background-color: #2980b9;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background-color: white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  }
+  
+  th {
+    background-color: #2c3e50;
+    color: white;
+    padding: 10px;
+  }
+  
+  td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  select, input[type="date"], input[type="number"] {
+    padding: 5px;
+    margin-top: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  a {
+    color: #3498db;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* ==== LOGIN ==== */
+
+  body.centro {
+    background-color: #f0f3f5;
+    font-family: Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  
+  .login-contenedor {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .login-contenedor h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .login-contenedor label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  
+  .login-contenedor input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .login-contenedor button {
+    width: 100%;
+    padding: 10px;
+    background-color: #2a5d85;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .login-contenedor button:hover {
+    background-color: #1d4b6b;
+  }
+  
+  .error {
+    color: red;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* ==== PANEL RRHH ==== */
+
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f1f4f6;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  h1 {
+    color: #2c3e50;
+  }
+  
+  button {
+    padding: 6px 12px;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    margin: 5px 3px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #1f6391;
+  }
+  
+  select, input[type="number"] {
+    padding: 5px;
+    margin: 5px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #ffffff;
+    box-shadow: 0px 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  th {
+    background-color: #2c3e50;
+    color: white;
+    padding: 10px;
+  }
+  
+  td {
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid #ddd;
+  }
+
+
+  /* ==== SUBIR-CERTIFICADOS ==== */
+
+  .formulario-contenedor {
+    background: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+    margin-top: 40px;
+  }
+  
+  .formulario-contenedor h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .formulario-contenedor label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+  }
+  
+  .formulario-contenedor input,
+  .formulario-contenedor select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .botones-formulario {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .botones-formulario button {
+    padding: 8px 16px;
+  }
+
+
+  /* ==== FORMULARIO SOLICITUD ==== */
+.formulario-contenedor h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.formulario-contenedor label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.formulario-contenedor input,
+.formulario-contenedor select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.botones-formulario {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.error {
+  color: red;
+  font-size: 13px;
+  margin-top: 4px;
+  display: block;
+}
